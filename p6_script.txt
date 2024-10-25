@@ -1,0 +1,70 @@
+#ifdef VS 
+ 
+precision highp float;
+attribute vec3 position;
+attribute vec3 normal;
+uniform mat3 normalMatrix;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+varying vec3 fNormal;
+varying vec3 fPosition;
+uniform float time;
+varying vec3 tempPos;
+
+void main()
+{
+  tempPos = position; 
+  
+  fNormal = normalize(normalMatrix * normal);
+  vec4 pos = modelViewMatrix * vec4(position, 1.0);
+  fPosition = pos.xyz;
+  
+  vec4 transform = projectionMatrix * pos;
+  transform.x = transform.x * (1.5 + sin(15.0*time));
+  gl_Position = transform;
+}
+ 
+#else 
+ 
+precision highp float;
+uniform float time;
+varying vec3 fPosition;
+varying vec3 fNormal;
+varying vec3 tempPos;
+
+const float ambientCoeff = 0.3;
+const float diffuseCoeff = 0.6;
+const float specularExp = 32.0;
+const vec3 lightDirection = vec3(-1.0,1.0,1.0);
+const vec3  lightColor = vec3(1.0,1.0,1.0);
+const vec3  objectColor = vec3(1.0,0.0,0.0); // red
+
+void main()
+{
+  vec3 l = normalize(lightDirection);
+  vec3 n = normalize(fNormal);
+  vec3 e = normalize(-fPosition);
+  vec3 h = normalize (e+l);
+
+  vec3 ambientColor  = (diffuseCoeff + ambientCoeff  * max(0.0, dot(n,l)))* objectColor;
+  vec3 specularColor = pow(max(0.0,dot(n,h)),specularExp) * lightColor;
+
+  gl_FragColor = vec4(ambientColor+specularColor, 1.0);
+  
+  if(cos(3.0*tempPos.y) > 0.5)  {
+    float angle = time*5.0;
+    
+    vec3 whiteDir = vec3(cos(angle),0,sin(angle)); 
+    vec3 greenDir = vec3(sin(angle),0,cos(angle));
+  
+    float diffuseWhite = pow(dot(fNormal,whiteDir),2.0);
+    float diffuseGreen = pow(dot(fNormal,greenDir),2.0);
+
+    vec3 white = diffuseWhite * vec3(1,1,1);
+    vec3 green = diffuseGreen * vec3(0,1,0);
+  
+    gl_FragColor = vec4(white + green, 1.0);
+ }
+}
+ 
+#endif

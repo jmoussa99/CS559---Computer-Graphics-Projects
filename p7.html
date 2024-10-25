@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Pyramid with Tree</title>
+	</head>
+	<body>
+		<script id="vertexShader" type="not-js">
+			attribute vec3 vPosition;
+			attribute vec3 vNormal;
+			attribute vec2 vTextureCoord;
+			
+			varying vec3 fPosition;
+			varying vec3 fNormal;
+			varying vec2 fTextureCoord;
+			
+			uniform mat4 uModelView;
+			uniform mat4 uModelViewProj;
+			
+			void main(void) {
+			  gl_Position = uModelViewProj * vec4(vPosition, 1.0);
+			  fPosition = (uModelView * vec4(vPosition, 1.0)).xyz; // In camera coordinates
+			  fNormal = vNormal;                           
+			  fTextureCoord = vTextureCoord;
+			}
+		</script>
+		<script id="fragmentShader" type="not-js">
+			precision highp float;
+			varying vec3 fPosition;
+			varying vec3 fNormal;
+			varying vec2 fTextureCoord;
+			uniform mat4 uModelView;
+			uniform mat3 uModelViewNormal;
+			uniform sampler2D textureSampler;
+			
+			const vec3  lightDirection = vec3(0.0,-0.3,1.0);
+			const float ambientCoeff  = 0.5;
+			const float diffuseCoeff  = 0.4;
+			const float specularCoeff = 0.3;
+			const float specularExp = 32.0;
+			const vec3  lightColor  = vec3(1.0,1.0,1.0);
+			
+			void main()
+			{
+            vec3 textureColor=texture2D(textureSampler,fTextureCoord).xyz;
+			vec3 l = normalize(lightDirection);
+			vec3 n = normalize(uModelViewNormal * fNormal);
+			vec3 e = normalize(-fPosition);
+			vec3 h = normalize (e+l);
+			
+			vec3 ambientColor  = (diffuseCoeff + ambientCoeff  * max(0.0, dot(n,l)))* textureColor;
+			vec3 specularColor = (specularCoeff * pow(max(0.0,dot(n,h)),specularExp)) * lightColor;
+			
+			gl_FragColor = vec4(ambientColor+specularColor, 1.0);
+			}
+			
+		</script>
+		<script type="text/javascript" src="gl-matrix-min.js"></script>
+		<script src="p7.js" id="module"></script>
+		<canvas id="canvas" width="500" height="500"></canvas>
+		<br>
+		<input id="slider1" type="range" min="-100" max="100" />
+		<input id="slider2" type="range" min="-100" max="100" />
